@@ -37,7 +37,7 @@ def parse_commandline():
         help="Lists pcaps submitted to PacketTotal.com for analysis.",
         action="store_true"
     )
-    args.add(
+    args.add_argument(
         '--export-pcaps',
         help="Writes pcaps submitted to PacketTotal.com for analysis to a csv file.",
         action="store_true"
