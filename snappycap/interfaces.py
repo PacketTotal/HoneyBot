@@ -158,7 +158,7 @@ class PTClient:
 
 
 def export_submissions_status():
-    with open('pcap-statuses.csv') as f:
+    with open('pcap-statuses.csv', 'wb') as f:
         writer = csv.writer(f, dialect='excel')
         table = [['Capture MD5',
                   'Capture Name',
