@@ -3,6 +3,8 @@ import sqlite3
 import logging
 from datetime import datetime
 
+
+import csv
 import boto3
 import requests
 import progressbar
@@ -153,6 +155,26 @@ class PTClient:
         if suc:
             return data
         return None
+
+
+def export_submissions_status():
+    with open('pcap-statuses.csv') as f:
+        writer = csv.writer(f, dialect='excel')
+        table = [['Capture MD5',
+                  'Capture Name',
+                  'Capture Start',
+                  'Capture End',
+                  'Upload Start',
+                  'Upload End',
+                  'Size',
+                  'Queued',
+                  'Analysis Started',
+                  'Analysis Completed',
+                  'Malicious',
+                  'Link']]
+        table.extend(get_submissions_status())
+        print('\n=== Written to {} ==='.format('pcap-statuses.csv'))
+        writer.writerows(table)
 
 
 def get_submissions_status():

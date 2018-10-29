@@ -37,6 +37,11 @@ def parse_commandline():
         help="Lists pcaps submitted to PacketTotal.com for analysis.",
         action="store_true"
     )
+    args.add(
+        '--export-pcaps',
+        help="Writes pcaps submitted to PacketTotal.com for analysis to a csv file.",
+        action="store_true"
+    )
     return args.parse_args()
 
 
@@ -48,6 +53,8 @@ if __name__ == '__main__':
         utils.print_network_interaces()
     elif args.list_pcaps:
         interfaces.print_submission_status()
+    elif args.export_pcaps:
+        interfaces.export_submissions_status()
     elif args.analyze:
         interfaces.Database().initialize_database()
         pcap = interfaces.Capture(args.interface, timeout=args.seconds)
