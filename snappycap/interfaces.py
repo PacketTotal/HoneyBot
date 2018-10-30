@@ -6,6 +6,7 @@ from datetime import datetime
 
 import csv
 import boto3
+import botocore
 import requests
 import progressbar
 import terminaltables
@@ -34,9 +35,10 @@ class Capture:
     Provides the ability to capture, upload, and save packet captures
     """
 
-    def __init__(self, interface , timeout=60):
+    def __init__(self, interface='lo', timeout=60, filepath=None):
         self.interface = interface
         self.timeout = timeout
+        self.path = filepath
         self.capture_start = None
         self.capture_end = None
         self.upload_start = None
@@ -45,6 +47,9 @@ class Capture:
         self.size = None
         self.name = 's_cap_' + \
                     str(datetime.now()).replace('-','').replace('.','').replace(':','').replace(' ', '') + '.pcap'
+        if os.path.isfile(self.path):
+            self.size = os.path.getsize(self.path)
+            self.md5 = get_filepath_md5_hash(self.path)
 
     def capture(self):
         try:
@@ -52,11 +57,15 @@ class Capture:
             self.size = capture_on_interface(self.interface, self.name, timeout=self.timeout)
             self.capture_end = datetime.utcnow()
             self.md5 = get_filepath_md5_hash('tmp/{}'.format(self.name))
+            self.path = 'tmp/{}'.format(self.name)
         except Exception as e:
             logger.error("An error was encountered while capturing on {} - {}".format(self.interface, e), exc_info=True)
 
 
     def upload(self):
+        if self.size == 0:
+            logger.error("Will not upload PCAP of 0 bytes. {} ({})".format(self.md5, self.name))
+            return
         try:
             self.upload_start = datetime.utcnow()
             session = boto3.Session(
@@ -67,11 +76,16 @@ class Capture:
             bucket = s3.Bucket('snappycap')
             bucket.put_object(
                 Key=self.name,
-                Body=open('tmp/{}'.format(self.name), 'rb'),
+                Body=open(self.path, 'rb'),
             )
             self.upload_end = datetime.utcnow()
+        except botocore.exceptions.ClientError as e:
+            logger.error('You have not been whitelisted to upload to this repository. White-list your IP by filling '
+                         'out the form here - https://goo.gl/forms/P0Io8NqPAfM42EWJ2')
+            raise e
         except Exception as e:
             logger.error("Failed to complete S3 upload for {} - {}".format(self.name, e), exc_info=True)
+            raise e
 
     def save(self):
         try:

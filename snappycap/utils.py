@@ -6,44 +6,13 @@ import time
 import warnings
 from hashlib import md5
 
-import progressbar
 import psutil
 import pyshark
+import progressbar
+from magic import from_buffer
 from terminaltables import AsciiTable
 
 from snappycap import const
-
-# Setup Logging
-
-
-def get_filepath_md5_hash(file_path):
-    """
-    :param file_path: path to the file being hashed
-    :return: the md5 hash of a file
-    """
-    with open(file_path, 'rb') as afile:
-       return get_file_md5_hash(afile)
-
-
-def get_file_md5_hash(fh):
-    """
-    :param fh: file handle
-    :return: the md5 hash of the file
-    """
-    block_size = 65536
-    md5_hasher = md5()
-    buf = fh.read(block_size)
-    while len(buf) > 0:
-        md5_hasher.update(buf)
-        buf = fh.read(block_size)
-    return md5_hasher.hexdigest()
-
-
-def get_network_interfaces():
-    """
-    :return: A list of valid interfaces and their addresses
-    """
-    return psutil.net_if_addrs().items()
 
 
 def capture_on_interface(interface, name, timeout=60):
@@ -81,6 +50,45 @@ def capture_on_interface(interface, name, timeout=60):
     capture.clear()
     capture.close()
     return pcap_size
+
+
+def get_filepath_md5_hash(file_path):
+    """
+    :param file_path: path to the file being hashed
+    :return: the md5 hash of a file
+    """
+    with open(file_path, 'rb') as afile:
+       return get_file_md5_hash(afile)
+
+
+def get_file_md5_hash(fh):
+    """
+    :param fh: file handle
+    :return: the md5 hash of the file
+    """
+    block_size = 65536
+    md5_hasher = md5()
+    buf = fh.read(block_size)
+    while len(buf) > 0:
+        md5_hasher.update(buf)
+        buf = fh.read(block_size)
+    return md5_hasher.hexdigest()
+
+
+def get_network_interfaces():
+    """
+    :return: A list of valid interfaces and their addresses
+    """
+    return psutil.net_if_addrs().items()
+
+
+def is_packet_capture(bytes):
+    """
+    :param bytes: raw bytes
+    :return: True is valid pcap or pcapng file
+    """
+    result = from_buffer(bytes)
+    return "pcap-ng" in result or "tcpdump" in result or "NetMon" in result
 
 
 def mkdir_p(path):
@@ -153,6 +161,8 @@ def print_pt_ascii_logo():
                                                : VERSION: {}
     """.format(const.VERSION)
     print(logo)
+
+# Setup Logging
 
 mkdir_p('logs/')
 mkdir_p('tmp/')

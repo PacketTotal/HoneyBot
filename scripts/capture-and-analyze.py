@@ -62,7 +62,11 @@ if __name__ == '__main__':
               "will terminate if this is reached.".format(args.seconds))
         sleep(2)
         pcap.capture()
-        print("Beginning upload...")
-        pcap.upload()
-        print("Upload complete!")
+        print('Uploading {} ({} bytes)'.format(pcap.name, pcap.size))
+        try:
+            pcap.upload()
+            pcap.save()
+            print('Upload complete. Check analysis status with --list-pcaps option')
+        except Exception:
+            print("Upload failed!")
         pcap.save()
