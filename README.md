@@ -1,5 +1,5 @@
 # SnappyCap
-### Cloudbased PCAP analysis; powered by PacketTotal.com
+### Cloud-based PCAP analysis; powered by PacketTotal.com
 
 ## Description
 SnappyCap is a set of scripts and libraries for capturing and analyzing packet captures with PacketTotal.com.
@@ -8,9 +8,20 @@ Currently this library provides two scripts:
   - `capture-and-analyze.py` - Capture on an interface for some period of time, and upload capture for analysis.
   - `upload-and-analyze.py` - Upload and analyze multiple packet captures to PacketTotal.com.
 
+
 ```
-DISCLAIMER: THESE TOOLS LEVERAGES PACKETTOTAL.COM FOR ANALYSIS. ALL PACKET CAPTURES ANALYZED WITH THESE TOOLS WILL BE MADE PUBLIC UPON ANALYSIS.
+THESE TOOLS LEVERAGES PACKETTOTAL.COM FOR ANALYSIS. ALL PACKET CAPTURES ANALYZED WITH THESE TOOLS WILL BE MADE PUBLIC UPON ANALYSIS.
 ```
+
+
+## Use Cases
+
+1. Analyze a personal repository of malicious PCAPs.
+4. Determine the benignity of hundreds of packet captures.
+2. Automate analyzing (and sharing) honeypot packet captures.
+3. Automate preliminary malware analysis/triage.
+
+
 
 ## Prerequisites:
  - [WireShark](https://www.wireshark.org/download.html) must be installed.
