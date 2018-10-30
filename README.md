@@ -20,7 +20,7 @@ DISCLAIMER: THESE TOOLS LEVERAGES PACKETTOTAL.COM FOR ANALYSIS. ALL PACKET CAPTU
 
 ## Installation
 - `pip install -r requirements.txt`
-- `pip setup.py install`
+- `python setup.py install`
 
 
 ## Usage
