@@ -12,9 +12,10 @@ from snappycap import interfaces
 def parse_commandline():
     args = argparse.ArgumentParser(description=const.DESCRIPTION)
     args.add_argument(
-        'path',
+        '--path',
         help='One or more paths to pcap or directory of pcaps.',
         nargs='+',
+        required='--analyze' in sys.argv
     )
     args.add_argument(
         '--analyze',
@@ -39,6 +40,12 @@ if __name__ == '__main__':
         utils.print_pt_ascii_logo()
     args = parse_commandline()
     analyze_paths = []
+    if args.list_pcaps:
+        interfaces.print_submission_status()
+    elif args.export_pcaps:
+        interfaces.export_submissions_status()
+    if not args.path:
+        sys.exit(0)
     for path in args.path:
         if os.path.isdir(path):
             for f in os.listdir(path):
@@ -68,7 +75,8 @@ if __name__ == '__main__':
             pcap.save()
         except Exception:
             print("Upload failed!")
-            break
+            sys.exit(1)
+    sys.exit(0)
 
 
 
