@@ -7,7 +7,9 @@ Currently this library provides two scripts:
   - `capture-and-analyze.py` - Capture on an interface for some period of time, and upload capture for analysis.
   - `upload-and-analyze.py` - Upload and analyze multiple packet captures to PacketTotal.com.
 
-`DISCLAIMER: THESE TOOLS LEVERAGES PACKETTOTAL.COM FOR ANALYSIS. ALL PACKET CAPTURES ANALYZED WITH THIS TOOL WILL BE MADE PUBLIC UPON ANALYSIS.`
+```
+DISCLAIMER: THESE TOOLS LEVERAGES PACKETTOTAL.COM FOR ANALYSIS. ALL PACKET CAPTURES ANALYZED WITH THESE TOOLS WILL BE MADE PUBLIC UPON ANALYSIS.
+```
 
 ## Prerequisites:
  - [WireShark](https://www.wireshark.org/download.html) must be installed.
