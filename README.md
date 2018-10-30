@@ -9,10 +9,10 @@ Currently this library provides two scripts:
   - `upload-and-analyze.py` - Upload and analyze multiple packet captures to PacketTotal.com.
 
 
-```
-THESE TOOLS LEVERAGES PACKETTOTAL.COM FOR ANALYSIS. ALL PACKET CAPTURES ANALYZED WITH THESE TOOLS WILL BE MADE PUBLIC UPON ANALYSIS.
-```
+## Warning
+> Any packet capture uploaded to becomes publicly available upon completed analysis.
 
+For more information visit [PacketTotal.com](https://packettotal.com/about.html).
 
 ## Use Cases
 
