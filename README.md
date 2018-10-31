@@ -82,3 +82,6 @@ optional arguments:
   --export-pcaps        Writes pcaps submitted to PacketTotal.com for analysis
                         to a csv file.
 ```
+
+## Example Usage
+![Upload and analyze example usage.](https://raw.githubusercontent.com/PacketTotal/SnappyCap/master/img/capture-and-analyze.gif)
