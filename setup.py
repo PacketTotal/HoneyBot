@@ -12,7 +12,8 @@ install_reqs = parse_requirements("requirements.txt")
 setup(
     name='SnappyCap',
     version='0.5.0',
-    packages=['snappycap', 'scripts'],
+    packages=['snappycap.lib'],
+    scripts=['bin/capture-and-analyze.py', 'bin/upload-and-analyze.py'],
     url='https://packettotal.com',
     license='MIT',
     author='Jamin Becker',
