@@ -46,13 +46,18 @@ class Capture:
         self.md5 = None
         self.size = None
         self.name = 's_cap_' + \
-                    str(datetime.now()).replace('-','').replace('.','').replace(':','').replace(' ', '') + '.pcap'
+                    str(datetime.now()).replace('-', '').replace('.', '').replace(':', '').replace(' ', '') + '.pcap'
         if os.path.isfile(self.path):
             self.size = os.path.getsize(self.path)
             self.md5 = get_filepath_md5_hash(self.path)
 
     def capture(self):
+        """
+        Begin a packet capture
+        """
+
         try:
+            logger.info("Beginning packet capture for {} seconds.".format(self.timeout))
             self.capture_start = datetime.utcnow()
             self.size = capture_on_interface(self.interface, self.name, timeout=self.timeout)
             self.capture_end = datetime.utcnow()
@@ -61,12 +66,16 @@ class Capture:
         except Exception as e:
             logger.error("An error was encountered while capturing on {} - {}".format(self.interface, e), exc_info=True)
 
-
     def upload(self):
+        """
+        Begin an upload to public bucket
+        """
+
         if self.size == 0:
             logger.error("Will not upload PCAP of 0 bytes. {} ({})".format(self.md5, self.name))
             return
         try:
+            logger.info("Beginning upload to public repo {}".format(self.path))
             self.upload_start = datetime.utcnow()
             session = boto3.Session(
                 aws_access_key_id=const.PUBLIC_USER,
@@ -88,6 +97,10 @@ class Capture:
             raise e
 
     def save(self):
+        """
+        Save the submission for analysis later
+        """
+
         try:
             Database().insert_row([
                 self.md5,
@@ -98,11 +111,21 @@ class Capture:
                 self.upload_end,
                 self.size
             ])
+            return True
         except Exception as e:
-            logger.error("Failed to complete database write of {} ({}) - {}".format(self.md5,
+            if 'UNIQUE' in str(e):
+                logger.warning('Skipping save, we\'ve analyzed this pcap before: {} ({}).'.format(self.md5,
+                                                                                    self.name))
+            else:
+                logger.error("Failed to complete database write of {} ({}) - {}".format(self.md5,
                                                                                     self.name, e), exc_info=True)
+            return False
 
     def cleanup(self):
+        """
+        Remove the temporary file from your tmp directory
+        """
+
         os.remove('tmp/{}'.format(self.name))
 
 
@@ -110,9 +133,9 @@ class Database:
     """
     Provides a basic CRUD interface for storing submission metadata
     """
+
     def __init__(self):
         self.conn = sqlite3.connect('database.db')
-
 
     def initialize_database(self):
         """
@@ -135,6 +158,7 @@ class Database:
         :param row: A list containing all the items of a completed analysis
                     [id, name, capture_start, capture_end, upload_start, upload_end, size]
         """
+
         c = self.conn.cursor()
         c.execute('''INSERT INTO pcaps(id, name, capture_start, capture_end, upload_start, upload_end, size)  
         VALUES(?,?,?,?,?,?,?);''', row)
@@ -150,6 +174,7 @@ class PTClient:
     """
     Provides a simple interface for retrieving information about a submission
     """
+
     def __init__(self):
         self.base = "https://packettotal.com"
         self.useragent = 'SnappyCap Client Version {}'.format(const.VERSION)
@@ -172,6 +197,9 @@ class PTClient:
 
 
 def export_submissions_status():
+    """
+    #Exports the results (analysis statuses) of all submissions to a csv
+    """
     with open('pcap-statuses.csv', 'w') as f:
         writer = csv.writer(f, dialect='excel')
         table = [['Capture MD5',
@@ -217,24 +245,26 @@ def get_submissions_status():
                     malicious = False
         if analysis_completed:
             link = "https://packettotal.com/app/analysis?id={}".format(_id)
-        results.append([_id, name, capture_start, capture_end, upload_start, upload_end, size, queued, analysis_started, analysis_completed, malicious, link])
+        results.append([_id, name, capture_start, capture_end, upload_start, upload_end, size, queued, analysis_started,
+                        analysis_completed, malicious, link])
     return results
+
 
 def print_submission_status():
     """
     Prints a formatted table of submitted PCAPs
     """
     table = [['Capture MD5',
-     'Capture Name',
-     'Capture Start',
-     'Capture End',
-     'Upload Start',
-     'Upload End',
-     'Size',
-     'Queued',
-     'Analysis Started',
-     'Analysis Completed',
-     'Malicious',
-     'Link']]
+              'Capture Name',
+              'Capture Start',
+              'Capture End',
+              'Upload Start',
+              'Upload End',
+              'Size',
+              'Queued',
+              'Analysis Started',
+              'Analysis Completed',
+              'Malicious',
+              'Link']]
     table.extend(get_submissions_status())
     print(terminaltables.AsciiTable(table).table)

@@ -12,6 +12,10 @@ Currently this library provides two scripts:
 ## Warning
 > Any packet capture uploaded to becomes publicly available upon completed analysis.
 
+## Limitations
+- Only .pcap and .pcapng files supported.
+- 50 MB analysis max.
+
 For more information visit [PacketTotal.com](https://packettotal.com/about.html).
 
 ## Use Cases

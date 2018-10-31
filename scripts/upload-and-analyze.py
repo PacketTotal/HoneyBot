@@ -1,8 +1,16 @@
+"""
+__author__: Jamin Becker (jamin@packettotal.com)
+"""
+
+
 import os
 import sys
 import argparse
 
+
+import sqlite3
 import progressbar
+
 
 from snappycap import const
 from snappycap import utils
@@ -61,18 +69,18 @@ if __name__ == '__main__':
                 analyze_paths.append(f)
         elif os.path.isfile(path):
             with open(path, 'rb') as f:
-                if not utils.is_packet_capture(path.read()):
+                if not utils.is_packet_capture(f.read()):
                     continue
                 f.seek(0)
-                if len(path.read(50000001)) > const.PT_MAX_BYTES:
+                if len(f.read(50000001)) > const.PT_MAX_BYTES:
                     continue
                 analyze_paths.append(path)
     interfaces.Database().initialize_database()
     for path in progressbar.progressbar(analyze_paths):
         pcap = interfaces.Capture(filepath=path)
         try:
-            pcap.upload()
-            pcap.save()
+            if pcap.save():
+                pcap.upload()
         except Exception:
             print("Upload failed!")
             sys.exit(1)

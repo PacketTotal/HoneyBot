@@ -17,5 +17,6 @@ setup(
     license='MIT',
     author='Jamin Becker',
     author_email='jamin@packettotal.com',
-    description='Capture, upload and analyze network traffic; powered by PacketTotal.com.'
+    description='Capture, upload and analyze network traffic; powered by PacketTotal.com.',
+    install_reqires=install_reqs
 )

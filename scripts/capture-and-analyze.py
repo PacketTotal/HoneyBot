@@ -64,9 +64,9 @@ if __name__ == '__main__':
         pcap.capture()
         print('Uploading {} ({} bytes)'.format(pcap.name, pcap.size))
         try:
-            pcap.upload()
-            print('Upload complete. Check analysis status with --list-pcaps option')
-            pcap.save()
+            if pcap.save():
+                pcap.upload()
+                print('Upload complete. Check analysis status with --list-pcaps option')
         except Exception:
             print("Upload failed!")
             sys.exit(1)
