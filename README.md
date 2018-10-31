@@ -84,4 +84,4 @@ optional arguments:
 ```
 
 ## Example Usage
-![Upload and analyze example usage.](https://raw.githubusercontent.com/PacketTotal/SnappyCap/master/img/capture-and-analyze.gif)
+![Upload and analyze example usage.](https://raw.githubusercontent.com/PacketTotal/SnappyCap/master/img/upload-and-analyze.gif)
