@@ -85,4 +85,14 @@ optional arguments:
 ```
 
 ## Example Usage
-![Upload and analyze example usage.](https://raw.githubusercontent.com/PacketTotal/SnappyCap/master/img/upload-and-analyze.gif)
+
+### Upload and analyze PCAPs in bulk
+![Upload and analyze example usage.](https://raw.githubusercontent.com/PacketTotal/SnappyCap/master/img/upload-analyze.gif)
+
+
+### Capture locally and instantly upload and analyze
+![Capture example usage](https://raw.githubusercontent.com/PacketTotal/SnappyCap/master/img/capture-analyze.gif)
+
+
+### List the results of uploaded PCAPs
+![List example usage](https://raw.githubusercontent.com/PacketTotal/SnappyCap/master/img/list-pcaps.gif)

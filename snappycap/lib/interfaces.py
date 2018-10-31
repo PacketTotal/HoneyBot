@@ -44,7 +44,7 @@ class Capture:
         self.size = None
         self.name = 's_cap_' + \
                     str(datetime.now()).replace('-', '').replace('.', '').replace(':', '').replace(' ', '') + '.pcap'
-        if os.path.isfile(self.path):
+        if self.path and os.path.isfile(str(self.path)):
             self.size = os.path.getsize(self.path)
             self.md5 = get_filepath_md5_hash(self.path)
             self.name = os.path.basename(self.path)
