@@ -1,6 +1,6 @@
 # SnappyCap
 ### Cloud-based PCAP analysis; powered by PacketTotal.com
-![PacketTotal Labs](https://raw.githubusercontent.com/PacketTotal/SnappyCap/master/img/packettotal-labs.png)
+![PacketTotal Labs](https://raw.githubusercontent.com/PacketTotal/SnappyCap/master/img/packettotal.png)
 
 ## Description
 SnappyCap is a set of scripts and libraries for capturing and analyzing packet captures with PacketTotal.com.
