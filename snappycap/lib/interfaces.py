@@ -4,6 +4,7 @@ import csv
 import logging
 import sqlite3
 import warnings
+from time import sleep
 from datetime import datetime
 
 
@@ -363,3 +364,5 @@ class Trigger:
                     # We don't want to upload packets that we already captured (and analyzed),
                     # so we break out of this inner loop
                     break
+            # We don't want to trigger on S3 upload, buffer tends to be a bit backed up
+            sleep(30)
