@@ -1,16 +1,22 @@
+import os
+import sys
 import csv
 import logging
-import os
 import sqlite3
+import warnings
 from datetime import datetime
+
 
 import boto3
 import botocore
 import progressbar
 import requests
 import terminaltables
+from IPy import IP
+
 
 from snappycap.lib import const
+from snappycap.lib.utils import listen_on_interface
 from snappycap.lib.utils import capture_on_interface
 from snappycap.lib.utils import get_filepath_md5_hash
 
@@ -270,3 +276,90 @@ def print_submission_status():
               'Link']]
     table.extend(get_submissions_status())
     print(terminaltables.AsciiTable(table).table)
+
+
+class Trigger:
+
+    def __init__(self, interface, capture_period_after_trigger=60):
+        self.interface = interface
+        self.capture_period_after_trigger = capture_period_after_trigger
+        self.whitelisted_ips = []
+        self._open_whitelist()
+
+
+    def _open_whitelist(self):
+        try:
+            with open('ip.whitelist', 'r') as f:
+                self.whitelisted_ips = [line.strip() for line in f.readlines() if line.strip() != '']
+        except FileNotFoundError:
+            self.whitelisted_ips = []
+
+
+    def learn(self, timeout=60):
+        src_ips = set()
+        dst_ips = set()
+
+        with open('ip.whitelist', 'w') as f:
+            if not sys.warnoptions:
+                warnings.simplefilter("ignore")
+            print('Generating whitelist of IP addresses based on traffic from the next {} seconds.'.format(timeout))
+            bar = progressbar.ProgressBar(max_value=progressbar.UnknownLength)
+            for conn in self.listener(timeout=timeout):
+                try:
+                    src, dst, proto = conn
+                    if IP(src).iptype() == 'PUBLIC':
+                        src_ips.add(src)
+                        bar.update(len(src_ips) + len(dst_ips))
+                    if IP(dst).iptype() == 'PUBLIC':
+                        dst_ips.add(dst)
+                        bar.update(len(src_ips) + len(dst_ips))
+                except AttributeError:
+                    pass
+            all_ips = list(src_ips)
+            all_ips.extend(dst_ips)
+            all_ips = set(all_ips)
+            for ip in all_ips:
+                f.write(ip + '\n')
+
+
+    def listener(self, timeout=None):
+        for packet in listen_on_interface(interface=self.interface, timeout=timeout):
+            try:
+                yield packet.ip.src, packet.ip.dst, packet.transport_layer
+            except AttributeError:
+                continue
+
+
+    def listen_and_trigger(self):
+        suppress = None
+        while True:
+            for conn in self.listener(timeout=None):
+                src, dst, _ = conn
+                trigger = None
+                if src not in self.whitelisted_ips:
+                    if src == suppress:
+                        break
+                    if IP(src).iptype() == 'PUBLIC':
+                        logger.info("Trigger [Source: {} not in whitelist] Capturing for {} seconds"
+                                     .format(src, self.capture_period_after_trigger))
+                        trigger = src
+                elif dst not in self.whitelisted_ips:
+                    if dst == suppress:
+                        break
+                    if IP(dst).iptype() == 'PUBLIC':
+                        logger.info("Trigger [Destination {} not in whitelist] Capturing for {} seconds"
+                                     .format(src, self.capture_period_after_trigger))
+                        trigger = dst
+                if trigger:
+                    capture = Capture(self.interface, timeout=self.capture_period_after_trigger)
+                    capture.capture()
+                    suppress = trigger
+                    try:
+                        if capture.save():
+                            capture.upload()
+                            logger.info('Upload complete')
+                    except Exception:
+                        logger.error('Upload Failed')
+                    # We don't want to upload packets that we already captured (and analyzed),
+                    # so we break out of this inner loop
+                    break

@@ -15,7 +15,7 @@ from snappycap.lib import interfaces, utils, const
 
 
 def parse_commandline():
-    args = argparse.ArgumentParser(description=const.DESCRIPTION)
+    args = argparse.ArgumentParser(description=const.UPLOAD_AND_ANALYZE_DESC)
     args.add_argument(
         '--path',
         help='One or more paths to pcap or directory of pcaps.',

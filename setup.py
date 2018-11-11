@@ -13,11 +13,11 @@ setup(
     name='SnappyCap',
     version='0.5.0',
     packages=['snappycap.lib'],
-    scripts=['bin/capture-and-analyze.py', 'bin/upload-and-analyze.py'],
+    scripts=['bin/capture-and-analyze.py', 'bin/trigger-and-analyze.py', 'bin/upload-and-analyze.py'],
     url='https://packettotal.com',
     license='MIT',
     author='Jamin Becker',
     author_email='jamin@packettotal.com',
-    description='Capture, upload and analyze network traffic; powered by PacketTotal.com.',
+    description='A suite of utilities providing the ability to do bulk network analysis with PacketTotal.com',
     install_reqires=install_reqs
 )

@@ -23,6 +23,7 @@ from snappycap.lib import const
 def capture_on_interface(interface, name, timeout=60):
     """
     :param interface: The name of the interface on which to capture traffic
+    :param name: The name of the capture file
     :param timeout: A limit in seconds specifying how long to capture traffic
     """
 
@@ -102,6 +103,22 @@ def mkdir_p(path):
     """
 
     pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+
+
+def listen_on_interface(interface, timeout=60):
+    """
+    :param interface: The name of the interface on which to capture traffic
+    :return: generator containing live packets
+    """
+
+    start = time.time()
+    capture = pyshark.LiveCapture(interface=interface)
+
+    for item in capture.sniff_continuously():
+        if timeout and time.time() - start > timeout:
+            break
+        yield item
+
 
 
 def print_network_interaces():

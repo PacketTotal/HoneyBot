@@ -2,29 +2,35 @@
 
 import argparse
 import sys
-from time import sleep
 
 from snappycap.lib import interfaces, utils, const
 
 
 def parse_commandline():
-    args = argparse.ArgumentParser(description=const.CAPTURE_AND_ANALYZE_DESC)
-    args.add_argument(
-        "--seconds",
-        help="The number of seconds to capture traffic for.",
-        type=int,
-        required='--analyze' in sys.argv
-    )
+    args = argparse.ArgumentParser(description=const.TRIGGER_AND_ANALYZE_DESC)
     args.add_argument(
         "--interface",
         help="The name of the interface (--list-interfaces to show available)",
         type=str,
-        required='--analyze' in sys.argv
+        required='--learn' in sys.argv or '--listen' in sys.argv
     )
     args.add_argument(
-        '--analyze',
-        help="If included, capture will be uploaded for analysis to PacketTotal.com.",
+        '--learn',
+        help="The number of seconds from which to build the known connections whitelist. "
+             "Connections in this whitelist will be ignored.",
+        type=int
+    )
+    args.add_argument(
+        '--listen',
+        help="If included, we will begin listening for unknown connections, "
+             "and immediately starting a packet capture and uploading to PacketTotal.com for analysis.",
         action="store_true"
+    )
+    args.add_argument(
+        '--capture-seconds',
+        type=int,
+        help='The number of seconds worth of network traffic to capture and analyze after a trigger has fired.',
+        required='--listen' in sys.argv
     )
     args.add_argument(
         "--list-interfaces",
@@ -54,20 +60,8 @@ if __name__ == '__main__':
         interfaces.print_submission_status()
     elif args.export_pcaps:
         interfaces.export_submissions_status()
-    elif args.analyze:
-        utils.print_analysis_disclaimer()
-        interfaces.Database().initialize_database()
-        pcap = interfaces.Capture(args.interface, timeout=args.seconds)
-        print("Beginning packet capture for {} seconds. Max PacketTotal upload size is 50MB; "
-              "will terminate if this is reached.".format(args.seconds))
-        sleep(2)
-        pcap.capture()
-        print('Uploading {} ({} bytes)'.format(pcap.name, pcap.size))
-        try:
-            if pcap.save():
-                pcap.upload()
-                print('Upload complete. Check analysis status with --list-pcaps option')
-        except Exception:
-            print("Upload failed!")
-            sys.exit(1)
+    elif args.learn:
+        interfaces.Trigger(args.interface, capture_period_after_trigger=args.learn).learn(args.learn)
+    elif args.listen:
+        interfaces.Trigger(args.interface, capture_period_after_trigger=args.capture_seconds).listen_and_trigger()
     sys.exit(0)

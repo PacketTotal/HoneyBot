@@ -1,4 +1,5 @@
 boto3==1.9.33
+IPy==0.83
 progressbar2==3.38.0
 psutil==5.4.7
 python_magic==0.4.15
