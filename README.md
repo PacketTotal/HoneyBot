@@ -4,7 +4,7 @@
 
 ## Description
 SnappyCap is a set of scripts and libraries for capturing and analyzing packet captures with PacketTotal.com.
-Currently this library provides two scripts:
+Currently this library provides three scripts:
 
   - `capture-and-analyze.py` - Capture on an interface for some period of time, and upload capture for analysis.
   - `upload-and-analyze.py` - Upload and analyze multiple packet captures to PacketTotal.com.
