@@ -2,20 +2,21 @@
 __author__: Jamin Becker (jamin@packettotal.com)
 """
 
-
-import logging
 import os
-import pathlib
 import sys
 import time
+import logging
+import pathlib
 import warnings
 from hashlib import md5
 
-import progressbar
+
 import psutil
 import pyshark
+import progressbar
 from magic import from_buffer
 from terminaltables import AsciiTable
+
 
 from snappycap.lib import const
 
@@ -207,6 +208,8 @@ def print_pt_ascii_logo():
                                                : VERSION: {}
     """.format(const.VERSION)
     print(logo)
+
+
 
 # Setup Logging
 
