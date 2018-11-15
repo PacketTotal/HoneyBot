@@ -1,6 +1,7 @@
 import os
 import sys
 import csv
+import json
 import logging
 import sqlite3
 import warnings
@@ -78,7 +79,7 @@ class Capture:
 
         if self.size == 0:
             logger.error("Will not upload PCAP of 0 bytes. {} ({})".format(self.md5, self.name))
-            return
+            return False
         try:
             logger.info("Beginning upload to public repo {}".format(self.path))
             self.upload_start = datetime.utcnow()
@@ -100,6 +101,7 @@ class Capture:
         except Exception as e:
             logger.error("Failed to complete S3 upload for {} - {}".format(self.name, e), exc_info=True)
             raise e
+        return True
 
     def save(self):
         """
@@ -107,7 +109,7 @@ class Capture:
         """
 
         try:
-            Database().insert_row([
+            Database().insert_pcap([
                 self.md5,
                 self.name,
                 self.capture_start,
@@ -154,11 +156,18 @@ class Database:
                     capture_end TEXT,
                     upload_start TEXT,
                     upload_end TEXT,
-                    size INTEGER)
+                    size INTEGER);
+                  ''')
+
+        c.execute('''CREATE TABLE IF NOT EXISTS completed (
+                    id VARCHAR(32) PRIMARY KEY,
+                    data TEXT,
+                    FOREIGN KEY(id) REFERENCES pcaps(id)
+                    );
                   ''')
         self.conn.commit()
 
-    def insert_row(self, row):
+    def insert_pcap(self, row):
         """
         :param row: A list containing all the items of a completed analysis
                     [id, name, capture_start, capture_end, upload_start, upload_end, size]
@@ -169,7 +178,15 @@ class Database:
         VALUES(?,?,?,?,?,?,?);''', row)
         self.conn.commit()
 
-    def select_rows(self):
+
+    def insert_completed(self, row):
+        c = self.conn.cursor()
+        c.execute('''INSERT INTO completed(id, data) 
+        VALUES(?,?);''', row)
+        self.conn.commit()
+
+
+    def select_pcaps(self):
         c = self.conn.cursor()
         try:
             res = c.execute('SELECT * FROM pcaps;')
@@ -178,6 +195,10 @@ class Database:
             exit(0)
         return res
 
+    def select_completed(self, _id):
+        c = self.conn.cursor()
+        res = c.execute("SELECT * FROM completed WHERE id='{}';".format(_id))
+        return res
 
 class PTClient:
     """
@@ -188,6 +209,8 @@ class PTClient:
         self.base = "https://packettotal.com"
         self.useragent = 'SnappyCap Client Version {}'.format(const.VERSION)
         self.session = requests.session()
+
+
 
     def get_pcap_status(self, _id):
         """
@@ -233,10 +256,20 @@ def get_submissions_status():
     :return: A list of statuses of all the submissions in the database
     """
     results = []
+    database = Database()
     print("Fetching analysis statuses...Please wait.")
-    for row in progressbar.progressbar(Database().select_rows()):
+    for row in progressbar.progressbar(Database().select_pcaps()):
         _id, name, capture_start, capture_end, upload_start, upload_end, size = row
-        res = PTClient().get_pcap_status(_id)
+        try:
+            raw_result = next(database.select_completed(_id))
+            res = json.loads(raw_result[1])
+        except StopIteration:
+            res = PTClient().get_pcap_status(_id)
+            if res and res.get('analysisCompleted'):
+                try:
+                    database.insert_completed([_id, json.dumps(res)])
+                except Exception as e:
+                   logger.warning('Could not cache status for {} - {}'.format(_id, e))
         queued, analysis_started, analysis_completed = False, False, False
         link = None
         malicious = None
@@ -332,7 +365,7 @@ class Trigger:
 
 
     def listen_and_trigger(self):
-        suppress = None
+        suppress = None # We don't want to trigger on the same IP twice in a row
         while True:
             for conn in self.listener(timeout=None):
                 src, dst, _ = conn
@@ -356,8 +389,8 @@ class Trigger:
                     capture.capture()
                     suppress = trigger
                     try:
-                        if capture.save():
-                            capture.upload()
+                        if capture.upload():
+                            capture.save()
                             logger.info('Upload complete')
                     except Exception:
                         logger.error('Upload Failed')

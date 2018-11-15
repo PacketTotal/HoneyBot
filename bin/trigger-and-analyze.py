@@ -63,5 +63,6 @@ if __name__ == '__main__':
     elif args.learn:
         interfaces.Trigger(args.interface, capture_period_after_trigger=args.learn).learn(args.learn)
     elif args.listen:
+        interfaces.Database().initialize_database()
         interfaces.Trigger(args.interface, capture_period_after_trigger=args.capture_seconds).listen_and_trigger()
     sys.exit(0)

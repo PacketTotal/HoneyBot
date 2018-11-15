@@ -78,8 +78,8 @@ if __name__ == '__main__':
     for path in progressbar.progressbar(analyze_paths):
         pcap = interfaces.Capture(filepath=path)
         try:
-            if pcap.save():
-                pcap.upload()
+            if pcap.upload():
+                pcap.save()
         except Exception:
             print("Upload failed!")
             sys.exit(1)
