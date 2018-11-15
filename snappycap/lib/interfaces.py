@@ -1,6 +1,7 @@
 import os
 import sys
 import csv
+import json
 import logging
 import sqlite3
 import warnings
@@ -78,7 +79,7 @@ class Capture:
 
         if self.size == 0:
             logger.error("Will not upload PCAP of 0 bytes. {} ({})".format(self.md5, self.name))
-            return
+            return False
         try:
             logger.info("Beginning upload to public repo {}".format(self.path))
             self.upload_start = datetime.utcnow()
@@ -100,6 +101,7 @@ class Capture:
         except Exception as e:
             logger.error("Failed to complete S3 upload for {} - {}".format(self.name, e), exc_info=True)
             raise e
+        return True
 
     def save(self):
         """
@@ -258,9 +260,16 @@ def get_submissions_status():
     print("Fetching analysis statuses...Please wait.")
     for row in progressbar.progressbar(Database().select_pcaps()):
         _id, name, capture_start, capture_end, upload_start, upload_end, size = row
-        print(next(database.select_completed(_id)))
-        res = PTClient().get_pcap_status(_id)
-        database.insert_completed([_id, str(res)])
+        try:
+            raw_result = next(database.select_completed(_id))
+            res = json.loads(raw_result[1])
+        except StopIteration:
+            res = PTClient().get_pcap_status(_id)
+            if res and res.get('analysisCompleted'):
+                try:
+                    database.insert_completed([_id, json.dumps(res)])
+                except Exception as e:
+                   logger.warning('Could not cache status for {} - {}'.format(_id, e))
         queued, analysis_started, analysis_completed = False, False, False
         link = None
         malicious = None
@@ -380,8 +389,8 @@ class Trigger:
                     capture.capture()
                     suppress = trigger
                     try:
-                        if capture.save():
-                            capture.upload()
+                        if capture.upload():
+                            capture.save()
                             logger.info('Upload complete')
                     except Exception:
                         logger.error('Upload Failed')
