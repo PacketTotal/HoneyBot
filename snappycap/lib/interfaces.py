@@ -258,7 +258,7 @@ def get_submissions_status():
     print("Fetching analysis statuses...Please wait.")
     for row in progressbar.progressbar(Database().select_pcaps()):
         _id, name, capture_start, capture_end, upload_start, upload_end, size = row
-        print(database.select_completed(_id))
+        print(next(database.select_completed(_id)))
         res = PTClient().get_pcap_status(_id)
         database.insert_completed([_id, str(res)])
         queued, analysis_started, analysis_completed = False, False, False
