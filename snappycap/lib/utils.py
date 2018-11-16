@@ -78,7 +78,7 @@ def check_auth():
         for line in f.readlines():
             if '=' not in line:
                 continue
-            name, value = line.split('=')
+            name, value = line.strip().split('=')
             auth[name] = value
     return auth
 
