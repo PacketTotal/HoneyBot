@@ -55,10 +55,7 @@ class Capture:
         self.size = None
         self.researcher_id = gen_unique_id(interface)
 
-        if self.researcher_id:
-            self.name = 'sc_%s%s.pcap' %(ts.day, self.researcher_id)
-        else:
-            self.name = 'sc_%s%s%s.pcap' % (ts.day, ts.hour, ts.min)
+        self.name = 'sc_%s%s%s%s.pcap' % (ts.day, ts.hour, ts.min, ts.second)
 
         self.auth = check_auth()
         if self.path and os.path.isfile(str(self.path)):
@@ -128,9 +125,7 @@ class Capture:
                 self.size
             ])
             logger.info('{} saved.')
-            if self.researcher_id:
-                logger.info('You can view pcaps you have uploaded by navigating to: ' +
-                            'https://packettotal.com/app/search?q={}'.format(self.md5, self.researcher_id))
+
             return True
         except Exception as e:
             if 'UNIQUE' in str(e):
