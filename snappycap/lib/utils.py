@@ -61,7 +61,7 @@ def capture_on_interface(interface, name, timeout=60):
 
 
 def check_auth():
-    home = pathlib.Path.home()
+    home = str(pathlib.Path.home())
     auth = {}
     user = ''
     key = ''
