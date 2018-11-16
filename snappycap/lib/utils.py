@@ -105,8 +105,13 @@ def get_mac_address_of_interface(interface):
     for k,v in psutil.net_if_addrs().items():
         if interface == k:
             for item in v:
-                if item.family == socket.AF_LINK:
-                    return item.address
+                try:
+                    if item.family == socket.AF_LINK:
+                        return item.address
+                except AttributeError:
+                    # Linux
+                    if item.family == socket.AF_PACKET:
+                        return item.address
     return None
 
 
