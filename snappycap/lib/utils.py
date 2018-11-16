@@ -5,6 +5,7 @@ __author__: Jamin Becker (jamin@packettotal.com)
 import os
 import sys
 import time
+import socket
 import logging
 import pathlib
 import warnings
@@ -59,6 +60,30 @@ def capture_on_interface(interface, name, timeout=60):
     return pcap_size
 
 
+def check_auth():
+    home = str(pathlib.Path.home())
+    auth = {}
+    user = ''
+    key = ''
+    auth_path = os.path.join(home, 'snappycap.auth')
+    if not os.path.exists(auth_path):
+        print('SnappyCap requires access to the PacketTotal S3 bucket to continue.')
+        print('Please fill out the form here, and credentials will be provided to you.')
+        print('\t----> https://goo.gl/forms/P0Io8NqPAfM42EWJ2')
+        while len(str(user)) != 20:
+            user = input('User: ')
+        while len(str(key)) != 40:
+            key = input('Key: ')
+        open(auth_path, 'w').write('{}={}\n{}={}'.format('user', user, 'key', key))
+    with open(auth_path, 'r') as f:
+        for line in f.readlines():
+            if '=' not in line:
+                continue
+            name, value = line.strip().split('=')
+            auth[name] = value
+    return auth
+
+
 def get_filepath_md5_hash(file_path):
     """
     :param file_path: path to the file being hashed
@@ -66,6 +91,42 @@ def get_filepath_md5_hash(file_path):
     """
     with open(file_path, 'rb') as afile:
        return get_file_md5_hash(afile)
+
+
+def get_str_md5_hash(s):
+    return md5(str(s).encode('utf-8')).hexdigest()
+
+
+def get_mac_address_of_interface(interface):
+    """
+    :param interface: The friendly name of a network interface
+    :return: the MAC address associated with that interface
+    """
+    for k,v in psutil.net_if_addrs().items():
+        if interface == k:
+            for item in v:
+                try:
+                    if item.family == socket.AF_LINK:
+                        return item.address
+                except AttributeError:
+                    # Linux
+                    if item.family == socket.AF_PACKET:
+                        return item.address
+    return None
+
+
+def gen_unique_id(interface):
+    """
+    Generates a unique ID based on your MAC address that will be used to tag all PCAPs uploaded to PacketTotal.com
+    This ID can be used to search and view PCAPs you have uploaded.
+
+    :param interface: The friendly name of a network interface
+    :return: A unique id
+    """
+    mac_address = get_mac_address_of_interface(interface)
+    if mac_address:
+        return get_str_md5_hash(get_str_md5_hash(mac_address))[0:15]
+    return None
 
 
 def get_file_md5_hash(fh):
@@ -226,3 +287,5 @@ fh.setFormatter(formatter)
 ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
+
+get_mac_address_of_interface('en0')

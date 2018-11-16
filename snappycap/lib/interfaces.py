@@ -18,9 +18,11 @@ from IPy import IP
 
 
 from snappycap.lib import const
+from snappycap.lib.utils import check_auth
 from snappycap.lib.utils import listen_on_interface
 from snappycap.lib.utils import capture_on_interface
 from snappycap.lib.utils import get_filepath_md5_hash
+from snappycap.lib.utils import gen_unique_id
 
 logger = logging.getLogger('snappy_cap.interfaces')
 logger.setLevel(logging.DEBUG)
@@ -41,6 +43,7 @@ class Capture:
     """
 
     def __init__(self, interface='lo', timeout=60, filepath=None):
+        ts = datetime.now()
         self.interface = interface
         self.timeout = timeout
         self.path = filepath
@@ -50,8 +53,11 @@ class Capture:
         self.upload_end = None
         self.md5 = None
         self.size = None
-        self.name = 's_cap_' + \
-                    str(datetime.now()).replace('-', '').replace('.', '').replace(':', '').replace(' ', '') + '.pcap'
+        self.researcher_id = gen_unique_id(interface)
+
+        self.name = 'sc_%s%s%s%s.pcap' % (ts.day, ts.hour, ts.min, ts.second)
+
+        self.auth = check_auth()
         if self.path and os.path.isfile(str(self.path)):
             self.size = os.path.getsize(self.path)
             self.md5 = get_filepath_md5_hash(self.path)
@@ -84,8 +90,8 @@ class Capture:
             logger.info("Beginning upload to public repo {}".format(self.path))
             self.upload_start = datetime.utcnow()
             session = boto3.Session(
-                aws_access_key_id=const.PUBLIC_USER,
-                aws_secret_access_key=const.PUBLIC_KEY
+                aws_access_key_id=self.auth['user'],
+                aws_secret_access_key=self.auth['key']
             )
             s3 = session.resource('s3')
             bucket = s3.Bucket('snappycap')
@@ -95,8 +101,8 @@ class Capture:
             )
             self.upload_end = datetime.utcnow()
         except botocore.exceptions.ClientError as e:
-            logger.error('You have not been whitelisted to upload to this repository. White-list your IP by filling '
-                         'out the form here - https://goo.gl/forms/P0Io8NqPAfM42EWJ2')
+            logger.error('You do not currently have bulk upload access to our S3 repository. '
+                         'Please fill out the form below, to receive credentials. \n\n https://goo.gl/forms/P0Io8NqPAfM42EWJ2')
             raise e
         except Exception as e:
             logger.error("Failed to complete S3 upload for {} - {}".format(self.name, e), exc_info=True)
@@ -118,6 +124,8 @@ class Capture:
                 self.upload_end,
                 self.size
             ])
+            logger.info('{} saved.')
+
             return True
         except Exception as e:
             if 'UNIQUE' in str(e):
@@ -313,6 +321,9 @@ def print_submission_status():
 
 
 class Trigger:
+    """
+    Provides a simple interface which listens for pcaps and performs a capture, when an unknown connection is made.
+    """
 
     def __init__(self, interface, capture_period_after_trigger=60):
         self.interface = interface
@@ -320,16 +331,24 @@ class Trigger:
         self.whitelisted_ips = []
         self._open_whitelist()
 
-
     def _open_whitelist(self):
+        """
+        Open the ip.whitelist file
+        """
         try:
             with open('ip.whitelist', 'r') as f:
                 self.whitelisted_ips = [line.strip() for line in f.readlines() if line.strip() != '']
         except FileNotFoundError:
             self.whitelisted_ips = []
 
-
     def learn(self, timeout=60):
+        """
+        Builds a whitelist of IP addresses for every connection captured during this time-period
+
+        :param timeout: The number of seconds to capture traffic
+        """
+
+
         src_ips = set()
         dst_ips = set()
 
@@ -355,7 +374,6 @@ class Trigger:
             for ip in all_ips:
                 f.write(ip + '\n')
 
-
     def listener(self, timeout=None):
         for packet in listen_on_interface(interface=self.interface, timeout=timeout):
             try:
@@ -365,6 +383,12 @@ class Trigger:
 
 
     def listen_and_trigger(self):
+        """
+        Begin listening for unknown connections,
+        start a capture and upload for analysis if one is detected
+        """
+
+
         suppress = None # We don't want to trigger on the same IP twice in a row
         while True:
             for conn in self.listener(timeout=None):
