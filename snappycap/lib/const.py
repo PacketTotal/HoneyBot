@@ -1,4 +1,4 @@
-VERSION = '0.5.2'
+VERSION = '0.7.0'
 PT_MAX_BYTES = 49999000
 CAPTURE_AND_ANALYZE_DESC = 'Capture on an interface for some period of time, and upload capture for analysis.'
 TRIGGER_AND_ANALYZE_DESC = 'Listen for unknown connections, and begin capturing when one is made. ' \
