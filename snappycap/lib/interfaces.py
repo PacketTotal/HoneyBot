@@ -22,6 +22,7 @@ from snappycap.lib.utils import check_auth
 from snappycap.lib.utils import listen_on_interface
 from snappycap.lib.utils import capture_on_interface
 from snappycap.lib.utils import get_filepath_md5_hash
+from snappycap.lib.utils import gen_unique_id
 
 logger = logging.getLogger('snappy_cap.interfaces')
 logger.setLevel(logging.DEBUG)
@@ -42,6 +43,7 @@ class Capture:
     """
 
     def __init__(self, interface='lo', timeout=60, filepath=None):
+        ts = datetime.now()
         self.interface = interface
         self.timeout = timeout
         self.path = filepath
@@ -51,8 +53,12 @@ class Capture:
         self.upload_end = None
         self.md5 = None
         self.size = None
-        self.name = 's_cap_' + \
-                    str(datetime.now()).replace('-', '').replace('.', '').replace(':', '').replace(' ', '') + '.pcap'
+        self.researcher_id = gen_unique_id(interface)
+
+        if self.researcher_id:
+            self.name = 'cap_%s%s%s%s.pcap' %(ts.day, ts.hour, ts.min, self.researcher_id)
+        else:
+            self.name = 'cap_%s%s%s.pcap' % (ts.day, ts.hour, ts.min)
 
         self.auth = check_auth()
         if self.path and os.path.isfile(str(self.path)):
@@ -121,6 +127,10 @@ class Capture:
                 self.upload_end,
                 self.size
             ])
+            logger.info('{} saved.')
+            if self.researcher_id:
+                logger.info('You can view pcaps you have uploaded by navigating to: ' +
+                            'https://packettotal.com/app/search?q={}'.format(self.md5, self.researcher_id))
             return True
         except Exception as e:
             if 'UNIQUE' in str(e):
