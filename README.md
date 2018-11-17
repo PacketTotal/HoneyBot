@@ -34,7 +34,7 @@ For more information visit [PacketTotal.com](https://packettotal.com/about.html)
     - If you are on a linux based operating system you can just install t-shark
         - `apt-get install tshark`
  - [Python 3.5](https://www.python.org/downloads/) or later is required.
- - You must [request your IP be whitelisted](https://goo.gl/forms/qRE67TO1MC5pual22), before you can leverage these scripts.
+ - You must [request upload credentials](https://goo.gl/forms/qRE67TO1MC5pual22), before you can leverage these scripts.
 
 
 ## Installation
