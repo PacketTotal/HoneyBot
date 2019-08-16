@@ -70,9 +70,10 @@ class Capture:
             logger.info("Beginning packet capture for {} seconds.".format(self.timeout))
             self.capture_start = datetime.utcnow()
             self.size = capture_on_interface(self.interface, self.name, timeout=self.timeout)
-            self.capture_end = datetime.utcnow()
-            self.md5 = get_filepath_md5_hash('tmp/{}'.format(self.name))
-            self.path = 'tmp/{}'.format(self.name)
+            if self.size:
+                self.capture_end = datetime.utcnow()
+                self.md5 = get_filepath_md5_hash('tmp/{}'.format(self.name))
+                self.path = 'tmp/{}'.format(self.name)
         except Exception as e:
             logger.error("An error was encountered while capturing on {} - {}".format(self.interface, e), exc_info=True)
 
