@@ -69,6 +69,7 @@ if __name__ == '__main__':
         elif os.path.isfile(path):
             with open(path, 'rb') as f:
                 if not utils.is_packet_capture(f.read()):
+                    print('Skipping {} as PCAP not a valid packet capture.'.format(path))
                     continue
                 f.seek(0)
                 if len(f.read(6000001)) > const.PT_MAX_BYTES:

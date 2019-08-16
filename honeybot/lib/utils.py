@@ -17,6 +17,7 @@ import pyshark
 import progressbar
 from magic import from_buffer
 from terminaltables import AsciiTable
+from packettotal_sdk.packettotal_api import PacketTotalApi
 
 
 from honeybot.lib import const
@@ -67,9 +68,13 @@ def check_auth():
     if not os.path.exists(auth_path):
         print('HoneyBot requires a PacketTotal API key.')
         print('Signup at: \n\t: https://packettotal.com/api.html\n')
-        while str(key) == '':
-            key = input('API Key: ')
+    else:
+        key = open(auth_path, 'r').read()
+    while PacketTotalApi(key).usage().status_code == 403:
+        print('Invalid API Key. Try again.')
+        key = input('API Key: ')
         open(auth_path, 'w').write(key)
+
     return open(auth_path, 'r').read()
 
 
@@ -145,7 +150,8 @@ def is_packet_capture(bytes):
     :return: True is valid pcap or pcapng file
     """
     result = from_buffer(bytes)
-    return "pcap-ng" in result or "tcpdump" in result or "NetMon" in result
+    valid = "pcap-ng" in result or "tcpdump" in result or "NetMon" in result or 'pcap capture file' in result
+    return valid
 
 
 def mkdir_p(path):

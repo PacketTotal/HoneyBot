@@ -80,7 +80,6 @@ class Capture:
         """
         Begin an upload to public bucket
         """
-
         if self.size == 0:
             logger.error("Will not upload PCAP of 0 bytes. {} ({})".format(self.md5, self.name))
             return False
@@ -89,7 +88,7 @@ class Capture:
 
             self.upload_start = datetime.utcnow()
             if os.path.getsize(self.path) <= const.PT_MAX_BYTES:
-                PacketTotalApi(api_key=check_auth()).analyze(pcap_file_obj=open(self.path, 'rb'))
+                PacketTotalApi(api_key=self.auth).analyze(pcap_file_obj=open(self.path, 'rb'))
             else:
                 logger.error('Skipping {} as PCAP is too large to be processed by PacketTotal API.'.format(self.path))
             self.upload_end = datetime.utcnow()
@@ -114,7 +113,7 @@ class Capture:
                 self.upload_end,
                 self.size
             ])
-            logger.info('{} saved.')
+            logger.info('{} saved.'.format(self.md5))
 
             return True
         except Exception as e:
