@@ -8,25 +8,23 @@ import warnings
 from time import sleep
 from datetime import datetime
 
-
-import boto3
-import botocore
 import progressbar
 import requests
 import terminaltables
 from IPy import IP
 
 
-from snappycap.lib import const
-from snappycap.lib.utils import check_auth
-from snappycap.lib.utils import listen_on_interface
-from snappycap.lib.utils import capture_on_interface
-from snappycap.lib.utils import get_filepath_md5_hash
-from snappycap.lib.utils import gen_unique_id
+from honeybot.lib import const
+from honeybot.lib.utils import check_auth
+from honeybot.lib.utils import gen_unique_id
+from honeybot.lib.utils import listen_on_interface
+from honeybot.lib.utils import capture_on_interface
+from honeybot.lib.utils import get_filepath_md5_hash
+from packettotal_sdk.packettotal_api import PacketTotalApi
 
-logger = logging.getLogger('snappy_cap.interfaces')
+logger = logging.getLogger('honeybot.interfaces')
 logger.setLevel(logging.DEBUG)
-fh = logging.FileHandler('logs/snappy_cap.log')
+fh = logging.FileHandler('logs/honeybot.log')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 fh.setLevel(logging.DEBUG)
@@ -72,9 +70,10 @@ class Capture:
             logger.info("Beginning packet capture for {} seconds.".format(self.timeout))
             self.capture_start = datetime.utcnow()
             self.size = capture_on_interface(self.interface, self.name, timeout=self.timeout)
-            self.capture_end = datetime.utcnow()
-            self.md5 = get_filepath_md5_hash('tmp/{}'.format(self.name))
-            self.path = 'tmp/{}'.format(self.name)
+            if self.size:
+                self.capture_end = datetime.utcnow()
+                self.md5 = get_filepath_md5_hash('tmp/{}'.format(self.name))
+                self.path = 'tmp/{}'.format(self.name)
         except Exception as e:
             logger.error("An error was encountered while capturing on {} - {}".format(self.interface, e), exc_info=True)
 
@@ -82,30 +81,21 @@ class Capture:
         """
         Begin an upload to public bucket
         """
-
         if self.size == 0:
             logger.error("Will not upload PCAP of 0 bytes. {} ({})".format(self.md5, self.name))
             return False
         try:
-            logger.info("Beginning upload to public repo {}".format(self.path))
+            logger.info("Beginning upload to PacketTotal API repo {}".format(self.path))
+
             self.upload_start = datetime.utcnow()
-            session = boto3.Session(
-                aws_access_key_id=self.auth['user'],
-                aws_secret_access_key=self.auth['key']
-            )
-            s3 = session.resource('s3')
-            bucket = s3.Bucket('snappycap')
-            bucket.put_object(
-                Key=self.name,
-                Body=open(self.path, 'rb'),
-            )
+            if os.path.getsize(self.path) <= const.PT_MAX_BYTES:
+                PacketTotalApi(api_key=self.auth).analyze(pcap_file_obj=open(self.path, 'rb'))
+            else:
+                logger.error('Skipping {} as PCAP is too large to be processed by PacketTotal API.'.format(self.path))
             self.upload_end = datetime.utcnow()
-        except botocore.exceptions.ClientError as e:
-            logger.error('You do not currently have bulk upload access to our S3 repository. '
-                         'Please fill out the form below, to receive credentials. \n\n https://goo.gl/forms/P0Io8NqPAfM42EWJ2')
-            raise e
         except Exception as e:
-            logger.error("Failed to complete S3 upload for {} - {}".format(self.name, e), exc_info=True)
+            logger.error("Failed to complete analysis through PacketTotal API {} - {}".format(self.name, e),
+                         exc_info=True)
             raise e
         return True
 
@@ -124,7 +114,7 @@ class Capture:
                 self.upload_end,
                 self.size
             ])
-            logger.info('{} saved.')
+            logger.info('{} saved.'.format(self.md5))
 
             return True
         except Exception as e:
@@ -186,13 +176,11 @@ class Database:
         VALUES(?,?,?,?,?,?,?);''', row)
         self.conn.commit()
 
-
     def insert_completed(self, row):
         c = self.conn.cursor()
         c.execute('''INSERT INTO completed(id, data) 
         VALUES(?,?);''', row)
         self.conn.commit()
-
 
     def select_pcaps(self):
         c = self.conn.cursor()
@@ -208,6 +196,7 @@ class Database:
         res = c.execute("SELECT * FROM completed WHERE id='{}';".format(_id))
         return res
 
+
 class PTClient:
     """
     Provides a simple interface for retrieving information about a submission
@@ -215,10 +204,8 @@ class PTClient:
 
     def __init__(self):
         self.base = "https://packettotal.com"
-        self.useragent = 'SnappyCap Client Version {}'.format(const.VERSION)
+        self.useragent = 'honeybot Client Version {}'.format(const.VERSION)
         self.session = requests.session()
-
-
 
     def get_pcap_status(self, _id):
         """
@@ -348,7 +335,6 @@ class Trigger:
         :param timeout: The number of seconds to capture traffic
         """
 
-
         src_ips = set()
         dst_ips = set()
 
@@ -381,14 +367,11 @@ class Trigger:
             except AttributeError:
                 continue
 
-
     def listen_and_trigger(self):
         """
         Begin listening for unknown connections,
         start a capture and upload for analysis if one is detected
         """
-
-
         suppress = None # We don't want to trigger on the same IP twice in a row
         while True:
             for conn in self.listener(timeout=None):
@@ -421,5 +404,5 @@ class Trigger:
                     # We don't want to upload packets that we already captured (and analyzed),
                     # so we break out of this inner loop
                     break
-            # We don't want to trigger on S3 upload, buffer tends to be a bit backed up
+            # We don't want to trigger on API upload, buffer tends to be a bit backed up
             sleep(30)

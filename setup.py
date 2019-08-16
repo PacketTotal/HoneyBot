@@ -1,6 +1,7 @@
 from distutils.core import setup
 
-def parse_requirements(filename):
+
+def parse_requirements():
     """
     load requirements from a pip requirements file
     """
@@ -8,11 +9,13 @@ def parse_requirements(filename):
     lineiter = (line.strip() for line in open('requirements.txt'))
     return [line for line in lineiter if line and not line.startswith("#")]
 
-install_reqs = parse_requirements("requirements.txt")
+
+install_reqs = parse_requirements()
+
 setup(
-    name='SnappyCap',
+    name='honeybot',
     version='0.5.0',
-    packages=['snappycap.lib'],
+    packages=['honeybot.lib', 'packettotal_sdk'],
     scripts=['bin/capture-and-analyze.py', 'bin/trigger-and-analyze.py', 'bin/upload-and-analyze.py'],
     url='https://packettotal.com',
     license='MIT',

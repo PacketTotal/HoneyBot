@@ -17,9 +17,10 @@ import pyshark
 import progressbar
 from magic import from_buffer
 from terminaltables import AsciiTable
+from packettotal_sdk.packettotal_api import PacketTotalApi
 
 
-from snappycap.lib import const
+from honeybot.lib import const
 
 
 def capture_on_interface(interface, name, timeout=60):
@@ -62,26 +63,19 @@ def capture_on_interface(interface, name, timeout=60):
 
 def check_auth():
     home = str(pathlib.Path.home())
-    auth = {}
-    user = ''
     key = ''
-    auth_path = os.path.join(home, 'snappycap.auth')
+    auth_path = os.path.join(home, 'honeybot.auth')
     if not os.path.exists(auth_path):
-        print('SnappyCap requires access to the PacketTotal S3 bucket to continue.')
-        print('Please fill out the form here, and credentials will be provided to you.')
-        print('\t----> https://goo.gl/forms/P0Io8NqPAfM42EWJ2')
-        while len(str(user)) != 20:
-            user = input('User: ')
-        while len(str(key)) != 40:
-            key = input('Key: ')
-        open(auth_path, 'w').write('{}={}\n{}={}'.format('user', user, 'key', key))
-    with open(auth_path, 'r') as f:
-        for line in f.readlines():
-            if '=' not in line:
-                continue
-            name, value = line.strip().split('=')
-            auth[name] = value
-    return auth
+        print('HoneyBot requires a PacketTotal API key.')
+        print('Signup at: \n\t: https://packettotal.com/api.html\n')
+    else:
+        key = open(auth_path, 'r').read()
+    while PacketTotalApi(key).usage().status_code == 403:
+        print('Invalid API Key. Try again.')
+        key = input('API Key: ')
+        open(auth_path, 'w').write(key)
+
+    return open(auth_path, 'r').read()
 
 
 def get_filepath_md5_hash(file_path):
@@ -156,7 +150,8 @@ def is_packet_capture(bytes):
     :return: True is valid pcap or pcapng file
     """
     result = from_buffer(bytes)
-    return "pcap-ng" in result or "tcpdump" in result or "NetMon" in result
+    valid = "pcap-ng" in result or "tcpdump" in result or "NetMon" in result or 'pcap capture file' in result
+    return valid
 
 
 def mkdir_p(path):
@@ -180,7 +175,6 @@ def listen_on_interface(interface, timeout=60):
         if timeout and time.time() - start > timeout:
             break
         yield item
-
 
 
 def print_network_interaces():
@@ -220,6 +214,7 @@ def print_analysis_disclaimer():
     answer = input('Continue? [Y/n]: ')
     if answer.lower() == 'n':
         exit(0)
+
 
 def print_pt_ascii_logo():
     """
@@ -265,7 +260,7 @@ def print_pt_ascii_logo():
                          / ***  ,******,  ***
                                 ********   #
     
-                                    - SnappyCap: Capture and analyze network traffic; powered by PacketTotal.com
+                                    - honeybot: Capture and analyze network traffic; powered by PacketTotal.com
                                                : VERSION: {}
     """.format(const.VERSION)
     print(logo)
@@ -276,9 +271,9 @@ def print_pt_ascii_logo():
 
 mkdir_p('logs/')
 mkdir_p('tmp/')
-logger = logging.getLogger('snappy_cap.utils')
+logger = logging.getLogger('honeybot.utils')
 logger.setLevel(logging.DEBUG)
-fh = logging.FileHandler('logs/snappy_cap.log')
+fh = logging.FileHandler('logs/honeybot.log')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 fh.setLevel(logging.DEBUG)
@@ -287,5 +282,3 @@ fh.setFormatter(formatter)
 ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
-
-get_mac_address_of_interface('en0')

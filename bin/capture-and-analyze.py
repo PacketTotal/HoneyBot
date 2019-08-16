@@ -4,7 +4,7 @@ import argparse
 import sys
 from time import sleep
 
-from snappycap.lib import interfaces, utils, const
+from honeybot.lib import interfaces, utils, const
 
 
 def parse_commandline():

@@ -3,7 +3,7 @@
 import argparse
 import sys
 
-from snappycap.lib import interfaces, utils, const
+from honeybot.lib import interfaces, utils, const
 
 
 def parse_commandline():
