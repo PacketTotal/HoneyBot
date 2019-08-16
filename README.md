@@ -16,7 +16,7 @@ Currently this library provides three scripts:
 
 ## Limitations
 - Only .pcap and .pcapng files supported.
-- 50 MB analysis max.
+- 6 MB analysis max.
 
 For more information visit [PacketTotal.com](https://packettotal.com/about.html).
 
