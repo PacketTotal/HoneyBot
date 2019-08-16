@@ -11,7 +11,7 @@ import sys
 
 import progressbar
 
-from snappycap.lib import interfaces, utils, const
+from honeybot.lib import interfaces, utils, const
 
 
 def parse_commandline():
@@ -63,7 +63,7 @@ if __name__ == '__main__':
                     if not utils.is_packet_capture(fh.read()):
                         continue
                     fh.seek(0)
-                    if len(fh.read(50000001)) > const.PT_MAX_BYTES:
+                    if len(fh.read(6000000)) > const.PT_MAX_BYTES:
                         continue
                 analyze_paths.append(f)
         elif os.path.isfile(path):
@@ -71,7 +71,8 @@ if __name__ == '__main__':
                 if not utils.is_packet_capture(f.read()):
                     continue
                 f.seek(0)
-                if len(f.read(50000001)) > const.PT_MAX_BYTES:
+                if len(f.read(6000001)) > const.PT_MAX_BYTES:
+                    print('Skipping {} as PCAP is too large to be processed by PacketTotal API.'.format(path))
                     continue
                 analyze_paths.append(path)
     interfaces.Database().initialize_database()

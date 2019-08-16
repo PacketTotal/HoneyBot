@@ -1,9 +1,9 @@
-# SnappyCap
+# HoneyBot
 ### Cloud-based PCAP analysis; powered by PacketTotal.com
-![PacketTotal Labs](https://raw.githubusercontent.com/PacketTotal/SnappyCap/master/img/packettotal.png)
+![PacketTotal Labs](https://raw.githubusercontent.com/PacketTotal/HoneyBot/master/img/packettotal.png)
 
 ## Description
-SnappyCap is a set of scripts and libraries for capturing and analyzing packet captures with PacketTotal.com.
+HoneyBot is a set of scripts and libraries for capturing and analyzing packet captures with PacketTotal.com.
 Currently this library provides three scripts:
 
   - `capture-and-analyze.py` - Capture on an interface for some period of time, and upload capture for analysis.
@@ -34,7 +34,7 @@ For more information visit [PacketTotal.com](https://packettotal.com/about.html)
     - If you are on a linux based operating system you can just install t-shark
         - `apt-get install tshark`
  - [Python 3.5](https://www.python.org/downloads/) or later is required.
- - You must [request upload credentials](https://goo.gl/forms/qRE67TO1MC5pual22), before you can leverage these scripts.
+ - You must [request an api key](https://packettotal.com/api.html), before you can leverage these scripts.
 
 
 ## Installation
